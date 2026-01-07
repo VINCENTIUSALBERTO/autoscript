@@ -232,9 +232,12 @@ display_ram_usage() {
     
     echo -n "  ["
     local color
-    if (( $(echo "$percent > 90" | bc -l) )); then
+    # Use awk for floating point comparison instead of bc
+    local percent_int
+    percent_int=$(echo "$percent" | awk '{printf "%.0f", $1}')
+    if [[ "$percent_int" -gt 90 ]]; then
         color="${RED}"
-    elif (( $(echo "$percent > 70" | bc -l) )); then
+    elif [[ "$percent_int" -gt 70 ]]; then
         color="${YELLOW}"
     else
         color="${GREEN}"

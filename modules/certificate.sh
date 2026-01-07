@@ -265,12 +265,12 @@ import_custom_certificate() {
         return
     fi
     
-    # Check if key matches certificate
-    local cert_modulus key_modulus
-    cert_modulus=$(openssl x509 -noout -modulus -in "$cert_source" 2>/dev/null | md5sum | cut -d' ' -f1)
-    key_modulus=$(openssl rsa -noout -modulus -in "$key_source" 2>/dev/null | md5sum | cut -d' ' -f1)
+    # Check if key matches certificate (supports both RSA and EC keys)
+    local cert_pubkey key_pubkey
+    cert_pubkey=$(openssl x509 -noout -pubkey -in "$cert_source" 2>/dev/null | md5sum | cut -d' ' -f1)
+    key_pubkey=$(openssl pkey -pubout -in "$key_source" 2>/dev/null | md5sum | cut -d' ' -f1)
     
-    if [[ "$cert_modulus" != "$key_modulus" ]] && [[ -n "$key_modulus" ]]; then
+    if [[ -n "$cert_pubkey" ]] && [[ -n "$key_pubkey" ]] && [[ "$cert_pubkey" != "$key_pubkey" ]]; then
         print_warning "Certificate and key may not match"
         if ! confirm "Continue anyway?"; then
             press_any_key

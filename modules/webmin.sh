@@ -231,13 +231,14 @@ install_webmin() {
             
             # Install dependencies
             apt update -q
-            apt install -y apt-transport-https software-properties-common wget gnupg
+            apt install -y apt-transport-https software-properties-common wget gnupg curl
             
-            # Add repository key
-            wget -qO - http://www.webmin.com/jcameron-key.asc | apt-key add - 2>/dev/null
+            # Add repository key using HTTPS
+            curl -fsSL https://download.webmin.com/jcameron-key.asc | gpg --dearmor -o /usr/share/keyrings/webmin-archive-keyring.gpg 2>/dev/null || \
+                wget -qO- https://download.webmin.com/jcameron-key.asc | gpg --dearmor -o /usr/share/keyrings/webmin-archive-keyring.gpg 2>/dev/null
             
-            # Add repository
-            echo "deb http://download.webmin.com/download/repository sarge contrib" > /etc/apt/sources.list.d/webmin.list
+            # Add repository with signed-by
+            echo "deb [signed-by=/usr/share/keyrings/webmin-archive-keyring.gpg] https://download.webmin.com/download/repository sarge contrib" > /etc/apt/sources.list.d/webmin.list
             
             # Install Webmin
             apt update -q

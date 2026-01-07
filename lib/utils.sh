@@ -316,11 +316,30 @@ generate_random_string() {
     tr -dc 'a-zA-Z0-9' < /dev/urandom | head -c "$length"
 }
 
-# Generate UUID
+# Generate UUID (RFC 4122 compliant)
 generate_uuid() {
-    cat /proc/sys/kernel/random/uuid 2>/dev/null || \
-        uuidgen 2>/dev/null || \
-        od -x /dev/urandom | head -1 | awk '{OFS="-"; print $2$3,$4,$5,$6,$7$8$9}'
+    # Prefer kernel random uuid if available (most reliable)
+    if [[ -f /proc/sys/kernel/random/uuid ]]; then
+        cat /proc/sys/kernel/random/uuid
+        return
+    fi
+    
+    # Fall back to uuidgen if available
+    if command -v uuidgen &>/dev/null; then
+        uuidgen
+        return
+    fi
+    
+    # Generate RFC 4122 version 4 UUID manually using /dev/urandom
+    local uuid
+    uuid=$(od -An -tx1 -N16 /dev/urandom | tr -d ' \n')
+    # Set version 4 (random) and variant bits
+    local byte6="${uuid:12:2}"
+    local byte8="${uuid:16:2}"
+    byte6=$(printf '%02x' $(( (0x${byte6} & 0x0f) | 0x40 )))
+    byte8=$(printf '%02x' $(( (0x${byte8} & 0x3f) | 0x80 )))
+    uuid="${uuid:0:12}${byte6}${uuid:14:2}${byte8}${uuid:18}"
+    echo "${uuid:0:8}-${uuid:8:4}-${uuid:12:4}-${uuid:16:4}-${uuid:20:12}"
 }
 
 # Format bytes to human readable

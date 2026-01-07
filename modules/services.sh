@@ -366,9 +366,17 @@ run_speedtest() {
         echo -e "${CYAN}Installing speedtest-cli...${NC}"
         
         if command_exists apt; then
-            apt update -q && apt install -y speedtest-cli 2>/dev/null || pip install speedtest-cli 2>/dev/null
+            # Prefer apt installation for consistent, versioned packages
+            apt update -q && apt install -y speedtest-cli 2>/dev/null
+            
+            # Only fall back to pip if apt fails and pip is available
+            if [[ $? -ne 0 ]] && command_exists pip; then
+                print_warning "apt install failed, trying pip..."
+                pip install speedtest-cli==2.1.3 2>/dev/null
+            fi
         elif command_exists pip; then
-            pip install speedtest-cli 2>/dev/null
+            # Use pinned version to avoid supply chain risks
+            pip install speedtest-cli==2.1.3 2>/dev/null
         fi
     fi
     
